@@ -1,0 +1,7 @@
+#MG47
+config SLFS_FS
+	bool "SLFS file system support"
+	default y
+	help
+	#TODO
+	SLFS is a virtual filesystem
