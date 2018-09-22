@@ -3,4 +3,10 @@
 # MG47
 #
 
-obj-y		:= file.o super.o
+obj-$(CONFIG_SLFS_FS) = slfs.o
+
+slfs-y		:= \
+				dir.o \
+				file.o \
+				slfs_main.o \
+				super.o 

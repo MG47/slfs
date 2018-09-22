@@ -1,57 +1,70 @@
 /*
-*	MG47 : Superblock Operations for slfs
+*	MG47 : superblock operations for slfs
+* TODO : replace pr_alert with pr_info
 */
-
-#include <linux/init.h>
-#include <linux/module.h>
 
 #include <slfs.h>
 
-static struct dentry *slfs_mount(struct vfsmount *mnt,
-				 struct file_system_type *fs_type, int flags,
-				 const char *dev_name, void *raw_data)
+static const struct super_operations slfs_super_ops = {
+
+};
+
+static int slfs_fill_super(struct super_block *sb,
+				void *data, int silent)
 {
-	//TODO
+	struct inode *inode;
+	struct dentry *root;
+	pr_alert("MG47 slfs: filling supeblock \n");
+	if (!sb) {
+		pr_err("MG47 slfs: error: sb is NULL \n");
+		return -1;
+	}
+
+	sb->s_magic = SLFS_MAGIC;
+	sb->s_op = &slfs_super_ops;
+
+	inode = new_inode(sb);
+	if (!inode) {
+		pr_err("MG47 slfs: error: could not allocate new inode for superblock \n");
+	} else	{
+		pr_alert("MG47 slfs: created new inode for superblock \n");
+	}
+
+	root = d_make_root(inode);
+	if (!root) {
+		pr_err("MG47 slfs: error: could not create root \n");
+	} else {
+		pr_alert("MG47 slfs: made new root \n");
+	}
+
+	sb->s_root = root;
+	sb->s_d_op = &slfs_dentry_ops;
+
+
+	/* Create stats file */
+
+	return 0;
+}
+
+/* mount function for slfs */
+/* TODO Fill raw data with mount options */
+struct dentry *slfs_mount(struct file_system_type *fs_type, 
+				int flags, const char *dev_name, void *raw_data)
+{
 	struct dentry *dent;
-	dent = NULL;
+	pr_alert("MG47 slfs: mouting slfs \n");
+	/* Use mount_nodev as slfs is not device-based */
+	//TODO cehck raw-data
+	dent = mount_nodev(fs_type, flags, raw_data, slfs_fill_super);
+	pr_alert("MG47 slfs: Mounted slfs \n");
+
 	return dent;
 }
 
 void slfs_kill_sb(struct super_block *sb)
 {
 	//TODO
+	pr_alert("MG47 slfs: Killing Superblock \n");
+	kill_anon_super(sb);
 }
 
-static struct file_system_type slfs_fs_type = {
-	.owner = THIS_MODULE,
-	.name = SLFS_NAME,
-	//TODO why mount2
-	.mount2 = slfs_mount,
-	.kill_sb = slfs_kill_sb,	
-};
-
-static int __init slfs_init(void)
-{
-	int ret;
-	pr_info("MG47 slfs: initializing slfs \n");
-
-	/* Register Filesystem */
-	ret = register_filesystem(&slfs_fs_type);
-	if (ret) {
-		pr_err("MG47 slfs: error: Could not register filesystem\n");
-		goto init_error;
-	}
-	pr_info("MG47 slfs: registered slfs \n");
-init_error:
-		    return 0;
-}
-
-static void __exit slfs_exit(void)
-{
-	pr_info("MG47 slfs: exiting slfs \n");
-	//TODO superblock cleanup, unregister filesystem
-}
-
-//TODO fs init? 
-module_init(slfs_init);
-module_exit(slfs_exit);
